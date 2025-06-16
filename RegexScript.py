@@ -57,17 +57,6 @@ def Visure_beforeCreateBaseline(bl, lBaselineID):
         for mode in range(1, 6):
             config = traceability_modes[mode]
             bl.Trace_INFO(f"---- Starting Trace Mode {mode}: {config['description']} ----")
-            # Dynamically choose the field based on the item's specification
-            spec_id_to_name = {bl.GetSpecificationID(name): name for name in TARGET_SPECIFICATIONS}
-            item_spec_id = item.specification_id
-            spec_name = spec_id_to_name.get(item_spec_id, "")
-
-            if spec_name == "DIR's":
-                fields_to_check = ["Parent Req."]
-            elif spec_name == "EDS's":
-                fields_to_check = ["Driving Requirement"]
-            else:
-                fields_to_check = config["fields"]
             regex = config["regex"]
 
             for lID in all_element_ids:
@@ -76,42 +65,61 @@ def Visure_beforeCreateBaseline(bl, lBaselineID):
                 item = bl.item(lID)
 
                 # Check specification filter
-                if TARGET_SPECIFICATIONS:
-                    in_spec = any(
-                        item.belongsToSpecification(bl.GetSpecificationID(name))
-                        for name in TARGET_SPECIFICATIONS
-                    )
-                    if not in_spec:
-                        continue
+        if TARGET_SPECIFICATIONS:
+            in_spec = False
+            spec_id_to_name = {}
+            for spec_name in TARGET_SPECIFICATIONS:
+                spec_id = bl.GetSpecificationID(spec_name)
+                spec_id_to_name[spec_id] = spec_name
+                if item.belongsToSpecification(spec_id):
+                    in_spec = True
+                    break
+                if not in_spec:
+                    continue
+        else:
+            spec_id_to_name = {}
 
-                for field in fields_to_check:
-                    if not item.has_attribute(field):
-                        continue
-                    attr = bl.attribute(field)
-                    raw = str(item.value(attr.id)).strip()
-                    if not raw:
-                        continue
+        # ========== Mode 1: Dynamic field selection ==========
+        if mode == 1:
+            item_spec_id = item.specification_id
+            spec_name = spec_id_to_name.get(item_spec_id, "")
+            if spec_name == "DIR's":
+                fields_to_check = ["Parent Req."]
+            elif spec_name == "EDS's":
+                fields_to_check = ["Driving Requirement"]
+            else:
+                fields_to_check = config["fields"]
+        else:
+            fields_to_check = config["fields"]
 
-                    if mode == 1:
-                        # Direct Code matching
-                        candidates = re.split(r"[,\n;]", raw)
-                        for token in candidates:
-                            ref_code = token.strip()
-                            if ref_code in all_elements_by_code:
-                                target = all_elements_by_code[ref_code]
-                                bl.CreateAssociationLink(item.id, target.id, rel_type_id)
-                                bl.Trace_INFO(f"[{item.code}] --(direct)--> [{ref_code}]")
-                    else:
-                        # Regex matching
-                        for match in re.findall(regex, raw, flags=re.MULTILINE):
-                            ref_code = match if isinstance(match, str) else (match[0] if match else None)
-                            if not ref_code:
-                                continue
-                            ref_code = ref_code.strip()
-                            if ref_code in all_elements_by_code:
-                                target = all_elements_by_code[ref_code]
-                                bl.CreateAssociationLink(item.id, target.id, rel_type_id)
-                                bl.Trace_INFO(f"[{item.code}] --(regex)--> [{ref_code}]")
+        for field in fields_to_check:
+            if not item.has_attribute(field):
+                continue
+            attr = bl.attribute(field)
+            raw = str(item.value(attr.id)).strip()
+            if not raw:
+                continue
+
+            if mode == 1:
+                # Direct Code matching
+                candidates = re.split(r"[,\n;]", raw)
+                for token in candidates:
+                    ref_code = token.strip()
+                    if ref_code in all_elements_by_code:
+                        target = all_elements_by_code[ref_code]
+                        bl.CreateAssociationLink(item.id, target.id, rel_type_id)
+                        bl.Trace_INFO(f"[{item.code}] --(direct)--> [{ref_code}]")
+            else:
+                # Regex matching
+                for match in re.findall(regex, raw, flags=re.MULTILINE):
+                    ref_code = match if isinstance(match, str) else (match[0] if match else None)
+                    if not ref_code:
+                        continue
+                    ref_code = ref_code.strip()
+                    if ref_code in all_elements_by_code:
+                        target = all_elements_by_code[ref_code]
+                        bl.CreateAssociationLink(item.id, target.id, rel_type_id)
+                        bl.Trace_INFO(f"[{item.code}] --(regex)--> [{ref_code}]")
 
             bl.Trace_INFO(f"---- Trace Mode {mode} Complete ----")
 
