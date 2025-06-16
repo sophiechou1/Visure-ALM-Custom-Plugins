@@ -1,6 +1,6 @@
 # ======================= CONFIGURATION ===========================
 TARGET_SPECIFICATIONS = []  # Example: ["DIR", "EDS"]; leave empty to process all
-RELATIONSHIP_TYPE_NAME = "generates"
+MOTIVE = "generates"
 # ================================================================
 
 import re
@@ -19,30 +19,30 @@ def Visure_beforeCreateBaseline(bl, lBaselineID):
             },
             2: {
                 "description": "DIR/EDS in 'reference'",
-                "fields": ["reference"],
+                "fields": ["Reference"],
                 "regex": r"(F\.)\w+(\.\w+)?"
             },
             3: {
                 "description": "10 CFR in 'reference'",
-                "fields": ["reference"],
+                "fields": ["Reference"],
                 "regex": r"^\d{1,4} CFR \d{1,4}(\.\d+(\([a-zA-Z0-9]+\))?(\([a-zA-Z0-9]+\))?)?$"
             },
             4: {
                 "description": "NCS Control references in 'reference'",
-                "fields": ["reference"],
+                "fields": ["Reference"],
                 "regex": r"^[A-Za-z]{5}-[A-Za-z]{4}-[0-9]{3,4}-(?:[0-9]{1,5}\.){1,4}[0-9]{1,5}$"
             },
             5: {
                 "description": "IROFS in 'description'",
-                "fields": ["description"],
+                "fields": ["Description"],
                 "regex": r"^[A-Z0-9]{2,4}[-\s][A-Z0-9]{1,3}$"
             }
         }
 
         # Get relationship type ID
-        rel_type_id = bl.GetRelationshipTypeID(RELATIONSHIP_TYPE_NAME)
+        rel_type_id = bl.GetRelationshipTypeID(MOTIVE)
         if rel_type_id == -1:
-            bl.Trace_WARNING(f"Relationship type '{RELATIONSHIP_TYPE_NAME}' not found.")
+            bl.Trace_WARNING(f"Relationship type '{MOTIVE}' not found.")
             return True
 
         # Cache all elements and index by Code
