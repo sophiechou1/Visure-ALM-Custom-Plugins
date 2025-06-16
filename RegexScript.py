@@ -1,5 +1,5 @@
 # ======================= CONFIGURATION ===========================
-TARGET_SPECIFICATIONS = []  # Example: ["DIR", "EDS"]; leave empty to process all
+TARGET_SPECIFICATIONS = ["DIR's", "EDS's"]  # Example: ["DIR", "EDS"]; leave empty to process all
 MOTIVE = "generates"
 # ================================================================
 
@@ -57,7 +57,17 @@ def Visure_beforeCreateBaseline(bl, lBaselineID):
         for mode in range(1, 6):
             config = traceability_modes[mode]
             bl.Trace_INFO(f"---- Starting Trace Mode {mode}: {config['description']} ----")
-            fields_to_check = config["fields"]
+            # Dynamically choose the field based on the item's specification
+            spec_id_to_name = {bl.GetSpecificationID(name): name for name in TARGET_SPECIFICATIONS}
+            item_spec_id = item.specification_id
+            spec_name = spec_id_to_name.get(item_spec_id, "")
+
+            if spec_name == "DIR's":
+                fields_to_check = ["Parent Req."]
+            elif spec_name == "EDS's":
+                fields_to_check = ["Driving Requirement"]
+            else:
+                fields_to_check = config["fields"]
             regex = config["regex"]
 
             for lID in all_element_ids:
