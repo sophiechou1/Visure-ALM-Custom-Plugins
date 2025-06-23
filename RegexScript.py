@@ -64,7 +64,7 @@ def Visure_beforeCreateBaseline(bl, lBaselineID):
                     continue
                 item = bl.item(lID)
 
-                # Check specification filter
+        # Check specification filter
         if TARGET_SPECIFICATIONS:
             in_spec = False
             spec_id_to_name = {}
